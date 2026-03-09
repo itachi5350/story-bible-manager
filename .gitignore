@@ -1,0 +1,14 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+chroma_store/
+
+# Environment variables (NEVER upload this)
+.env
+
+# Node modules (frontend)
+node_modules/
+
+# VS Code
+.vscode/
