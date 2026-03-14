@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import chromadb
-
+from routers.ingest import router as ingest_router
 load_dotenv()
 
 app = FastAPI(title="Story Bible Manager")
@@ -17,6 +17,7 @@ app.add_middleware(
 
 # Initialize ChromaDB (stores data locally in a folder called chroma_store)
 chroma_client = chromadb.PersistentClient(path="./chroma_store")
+app.include_router(ingest_router)
 
 @app.get("/health")
 def health_check():
