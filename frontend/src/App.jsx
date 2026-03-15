@@ -1,0 +1,318 @@
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import "./App.css";
+
+const API = "http://localhost:8000";
+
+const SUGGESTIONS = [
+  "What are the main characters?",
+  "Describe the setting",
+  "What is the central conflict?",
+  "Who knows about the secret?",
+];
+
+export default function App() {
+  const [stories, setStories] = useState([]);
+  const [activeStory, setActiveStory] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [storyName, setStoryName] = useState("");
+  const [file, setFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const chatEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    fetchStories();
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const fetchStories = async () => {
+    try {
+      const res = await axios.get(`${API}/collections`);
+      setStories(res.data.collections);
+    } catch (err) {
+      console.error("Failed to fetch stories", err);
+    }
+  };
+
+  const handleSelectStory = (story) => {
+    setActiveStory(story);
+    setMessages([]);
+  };
+
+  const handleSend = async (text) => {
+    const question = text || input.trim();
+    if (!question || !activeStory || loading) return;
+    setInput("");
+
+    const userMsg = { role: "user", content: question };
+    setMessages((prev) => [...prev, userMsg]);
+    setLoading(true);
+
+    try {
+      const res = await axios.post(`${API}/query/ask`, {
+        story_name: activeStory,
+        question,
+      });
+      const assistantMsg = {
+        role: "assistant",
+        content: res.data.answer,
+        sources: res.data.sources,
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Something went wrong. Please try again.",
+          sources: [],
+        },
+      ]);
+    } finally {
+      setLoading(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!storyName.trim() || !file) return;
+    setUploading(true);
+    setUploadStatus(null);
+
+    const formData = new FormData();
+    formData.append("story_name", storyName.trim().replace(/\s+/g, "_"));
+    formData.append("file", file);
+
+    try {
+      const res = await axios.post(`${API}/ingest/upload`, formData);
+      setUploadStatus({
+        type: "success",
+        message: `✓ ${res.data.chunks_saved} passages indexed from "${res.data.story}"`,
+      });
+      await fetchStories();
+      setTimeout(() => {
+        setShowUpload(false);
+        setStoryName("");
+        setFile(null);
+        setUploadStatus(null);
+      }, 2000);
+    } catch (err) {
+      setUploadStatus({
+        type: "error",
+        message: "Upload failed. Please try again.",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="app">
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <div className="sidebar-logo">
+            <span className="logo-icon">📖</span>
+            <span className="sidebar-title">Story Bible</span>
+          </div>
+          <div className="sidebar-subtitle">Your narrative universe</div>
+        </div>
+
+        <div className="sidebar-section">
+          <div className="sidebar-section-label">Your Stories</div>
+        </div>
+
+        <div className="story-list">
+          {stories.length === 0 ? (
+            <div className="no-stories">
+              No stories yet.<br />Upload your first chapter to begin.
+            </div>
+          ) : (
+            stories.map((story) => (
+              <div
+                key={story}
+                className={`story-item ${activeStory === story ? "active" : ""}`}
+                onClick={() => handleSelectStory(story)}
+              >
+                <div className="story-dot" />
+                <span className="story-name">{story.replace(/_/g, " ")}</span>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="sidebar-footer">
+          <button className="upload-btn" onClick={() => setShowUpload(true)}>
+            <span>＋</span> Add Story
+          </button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <main className="main">
+        <div className="topbar">
+          <div className="topbar-story">
+            {activeStory ? (
+              <>Ask about <span>{activeStory.replace(/_/g, " ")}</span></>
+            ) : (
+              "Select a story to begin"
+            )}
+          </div>
+          <div className="topbar-hint">
+            {activeStory ? "Ask anything about your story" : "← Choose from the sidebar"}
+          </div>
+        </div>
+
+        {!activeStory ? (
+          <div className="no-story-selected">
+            <div className="no-story-icon">🕯️</div>
+            <div className="no-story-text">Your story awaits</div>
+            <div className="no-story-hint">Select a story from the sidebar or upload a new one</div>
+          </div>
+        ) : (
+          <>
+            <div className="chat-area">
+              {messages.length === 0 && !loading && (
+                <div className="empty-state">
+                  <div className="empty-icon">✦</div>
+                  <div className="empty-title">What would you like to know?</div>
+                  <div className="empty-subtitle">
+                    Ask anything about your characters, plot, lore, or timeline.
+                  </div>
+                  <div className="suggestion-chips">
+                    {SUGGESTIONS.map((s) => (
+                      <div key={s} className="chip" onClick={() => handleSend(s)}>
+                        {s}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {messages.map((msg, i) => (
+                <div key={i} className={`message ${msg.role}`}>
+                  <div className="message-avatar">
+                    {msg.role === "user" ? "✦" : "📖"}
+                  </div>
+                  <div className="message-bubble">
+                    {msg.content}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="message-sources">
+                        <div className="sources-label">Referenced from your story</div>
+                        {msg.sources.slice(0, 2).map((src, j) => (
+                          <div key={j} className="source-excerpt">{src}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {loading && (
+                <div className="thinking">
+                  <div className="message-avatar assistant">📖</div>
+                  <div className="thinking-dots">
+                    <span /><span /><span />
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            <div className="input-area">
+              <div className="input-wrapper">
+                <textarea
+                  ref={inputRef}
+                  className="chat-input"
+                  placeholder="Ask about your story..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  rows={1}
+                />
+                <button
+                  className="send-btn"
+                  onClick={() => handleSend()}
+                  disabled={!input.trim() || loading}
+                >
+                  ↑
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </main>
+
+      {/* Upload Modal */}
+      {showUpload && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowUpload(false)}>
+          <div className="modal">
+            <div className="modal-title">Add a New Story</div>
+            <div className="modal-subtitle">Upload a chapter or document to your story bible</div>
+
+            <div className="form-group">
+              <label className="form-label">Story Name</label>
+              <input
+                className="form-input"
+                placeholder="e.g. my-fantasy-novel"
+                value={storyName}
+                onChange={(e) => setStoryName(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Upload File</label>
+              <div className={`file-drop ${file ? "dragover" : ""}`}>
+                <input
+                  type="file"
+                  accept=".txt"
+                  onChange={(e) => setFile(e.target.files[0])}
+                />
+                <div className="file-drop-icon">📄</div>
+                <div className="file-drop-text">
+                  {file ? file.name : "Click to choose a file"}
+                </div>
+                <div className="file-drop-hint">.txt files supported</div>
+                {file && <div className="file-selected">✓ {file.name} selected</div>}
+              </div>
+            </div>
+
+            {uploadStatus && (
+              <div className={`upload-status ${uploadStatus.type}`}>
+                {uploadStatus.message}
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={() => setShowUpload(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn-upload"
+                onClick={handleUpload}
+                disabled={!storyName.trim() || !file || uploading}
+              >
+                {uploading ? "Indexing..." : "Upload & Index"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
