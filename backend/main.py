@@ -38,3 +38,10 @@ def list_collections():
         "collections": [c.name for c in collections],
         "count": len(collections)
     }
+@app.delete("/collections/{story_name}")
+def delete_collection(story_name: str):
+    try:
+        chroma_client.delete_collection(name=story_name)
+        return {"message": f"Story '{story_name}' deleted successfully"}
+    except Exception as e:
+        return {"error": str(e)}

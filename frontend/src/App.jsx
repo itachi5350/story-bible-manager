@@ -168,6 +168,24 @@ export default function App() {
     }
   };
 
+  const handleDeleteStory = async (story, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Delete "${story.replace(/_/g, " ")}"? This cannot be undone.`)) return;
+
+    try {
+      await axios.delete(`${API}/collections/${story}`);
+      setStories((prev) => prev.filter((s) => s !== story));
+      if (activeStory === story) {
+        setActiveStory(null);
+        setMessages([]);
+        setCharacters([]);
+        setCheckResult(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete story", err);
+    }
+  };
+
   return (
     <div className="app">
       {/* Sidebar */}
@@ -198,6 +216,13 @@ export default function App() {
               >
                 <div className="story-dot" />
                 <span className="story-name">{story.replace(/_/g, " ")}</span>
+                <button
+                  className="delete-story-btn"
+                  onClick={(e) => handleDeleteStory(story, e)}
+                  title="Delete story"
+                >
+                  ✕
+                </button>
               </div>
             ))
           )}

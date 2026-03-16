@@ -950,3 +950,26 @@
   color: var(--text-dim);
   font-style: italic;
 }
+/* Delete button on story items */
+.story-item:hover .delete-story-btn {
+  opacity: 1;
+}
+
+.delete-story-btn {
+  opacity: 0;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.delete-story-btn:hover {
+  color: #c45c5c;
+  background: rgba(139, 32, 32, 0.15);
+}
