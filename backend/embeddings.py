@@ -1,26 +1,12 @@
-from sentence_transformers import SentenceTransformer
-import threading
+from groq import Groq
+import os
+from dotenv import load_dotenv
 
-# Load model lazily in background so server starts fast
-model = None
+load_dotenv()
 
-def get_model():
-    global model
-    if model is None:
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-    return model
-
-# Start loading in background thread immediately
-def _preload():
-    get_model()
-
-threading.Thread(target=_preload, daemon=True).start()
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50):
-    """
-    Splits a long text into smaller overlapping chunks.
-    overlap means chunks share some sentences for better context.
-    """
     words = text.split()
     chunks = []
     i = 0
@@ -31,8 +17,11 @@ def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50):
     return chunks
 
 def embed_texts(texts: list[str]):
-    """
-    Converts a list of text chunks into vectors (numbers).
-    """
-    embeddings = get_model().encode(texts, show_progress_bar=True)
-    return embeddings.tolist()
+    embeddings = []
+    for text in texts:
+        response = client.embeddings.create(
+            model="nomic-embed-text-v1_5",
+            input=text
+        )
+        embeddings.append(response.data[0].embedding)
+    return embeddings
