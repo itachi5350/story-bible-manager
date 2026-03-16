@@ -508,14 +508,14 @@ export default function App() {
               <div className={`file-drop ${file ? "dragover" : ""}`}>
                 <input
                   type="file"
-                  accept=".txt"
+                  accept=".txt,.pdf"
                   onChange={(e) => setFile(e.target.files[0])}
                 />
                 <div className="file-drop-icon">📄</div>
                 <div className="file-drop-text">
                   {file ? file.name : "Click to choose a file"}
                 </div>
-                <div className="file-drop-hint">.txt files supported</div>
+                <div className="file-drop-hint">.txt and .pdf files supported</div>
                 {file && (
                   <div className="file-selected">✓ {file.name} selected</div>
                 )}
