@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./App.css";
 
-const API = "http://localhost:8000";
+const API = "https://story-bible-manager.onrender.com";
 
 const SUGGESTIONS = [
   "What are the main characters?",
