@@ -22,6 +22,10 @@ export default function App() {
   const [file, setFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState("chat");
+  const [newScene, setNewScene] = useState("");
+  const [checkResult, setCheckResult] = useState(null);
+  const [checking, setChecking] = useState(false);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -45,6 +49,8 @@ export default function App() {
   const handleSelectStory = (story) => {
     setActiveStory(story);
     setMessages([]);
+    setCheckResult(null);
+    setActiveTab("chat");
   };
 
   const handleSend = async (text) => {
@@ -121,6 +127,27 @@ export default function App() {
     }
   };
 
+  const handleContradictionCheck = async () => {
+    if (!newScene.trim() || !activeStory) return;
+    setChecking(true);
+    setCheckResult(null);
+
+    try {
+      const res = await axios.post(`${API}/contradict/check`, {
+        story_name: activeStory,
+        new_scene: newScene,
+      });
+      setCheckResult(res.data);
+    } catch (err) {
+      setCheckResult({
+        contradictions_found: false,
+        analysis: "Something went wrong. Please try again.",
+      });
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <div className="app">
       {/* Sidebar */}
@@ -174,7 +201,7 @@ export default function App() {
             )}
           </div>
           <div className="topbar-hint">
-            {activeStory ? "Ask anything about your story" : "← Choose from the sidebar"}
+            {activeStory ? "Your AI story assistant" : "← Choose from the sidebar"}
           </div>
         </div>
 
@@ -182,88 +209,166 @@ export default function App() {
           <div className="no-story-selected">
             <div className="no-story-icon">🕯️</div>
             <div className="no-story-text">Your story awaits</div>
-            <div className="no-story-hint">Select a story from the sidebar or upload a new one</div>
+            <div className="no-story-hint">
+              Select a story from the sidebar or upload a new one
+            </div>
           </div>
         ) : (
           <>
-            <div className="chat-area">
-              {messages.length === 0 && !loading && (
-                <div className="empty-state">
-                  <div className="empty-icon">✦</div>
-                  <div className="empty-title">What would you like to know?</div>
-                  <div className="empty-subtitle">
-                    Ask anything about your characters, plot, lore, or timeline.
-                  </div>
-                  <div className="suggestion-chips">
-                    {SUGGESTIONS.map((s) => (
-                      <div key={s} className="chip" onClick={() => handleSend(s)}>
-                        {s}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {messages.map((msg, i) => (
-                <div key={i} className={`message ${msg.role}`}>
-                  <div className="message-avatar">
-                    {msg.role === "user" ? "✦" : "📖"}
-                  </div>
-                  <div className="message-bubble">
-                    {msg.content}
-                    {msg.sources && msg.sources.length > 0 && (
-                      <div className="message-sources">
-                        <div className="sources-label">Referenced from your story</div>
-                        {msg.sources.slice(0, 2).map((src, j) => (
-                          <div key={j} className="source-excerpt">{src}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {loading && (
-                <div className="thinking">
-                  <div className="message-avatar assistant">📖</div>
-                  <div className="thinking-dots">
-                    <span /><span /><span />
-                  </div>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            <div className="input-area">
-              <div className="input-wrapper">
-                <textarea
-                  ref={inputRef}
-                  className="chat-input"
-                  placeholder="Ask about your story..."
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  rows={1}
-                />
-                <button
-                  className="send-btn"
-                  onClick={() => handleSend()}
-                  disabled={!input.trim() || loading}
-                >
-                  ↑
-                </button>
+            {/* Tabs */}
+            <div className="tabs">
+              <div
+                className={`tab ${activeTab === "chat" ? "active" : ""}`}
+                onClick={() => setActiveTab("chat")}
+              >
+                💬 Ask Questions
+              </div>
+              <div
+                className={`tab ${activeTab === "contradict" ? "active" : ""}`}
+                onClick={() => setActiveTab("contradict")}
+              >
+                ⚠️ Check Contradictions
               </div>
             </div>
+
+            {/* Chat Tab */}
+            {activeTab === "chat" && (
+              <>
+                <div className="chat-area">
+                  {messages.length === 0 && !loading && (
+                    <div className="empty-state">
+                      <div className="empty-icon">✦</div>
+                      <div className="empty-title">What would you like to know?</div>
+                      <div className="empty-subtitle">
+                        Ask anything about your characters, plot, lore, or timeline.
+                      </div>
+                      <div className="suggestion-chips">
+                        {SUGGESTIONS.map((s) => (
+                          <div key={s} className="chip" onClick={() => handleSend(s)}>
+                            {s}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {messages.map((msg, i) => (
+                    <div key={i} className={`message ${msg.role}`}>
+                      <div className="message-avatar">
+                        {msg.role === "user" ? "✦" : "📖"}
+                      </div>
+                      <div className="message-bubble">
+                        {msg.content}
+                        {msg.sources && msg.sources.length > 0 && (
+                          <div className="message-sources">
+                            <div className="sources-label">Referenced from your story</div>
+                            {msg.sources.slice(0, 2).map((src, j) => (
+                              <div key={j} className="source-excerpt">{src}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {loading && (
+                    <div className="thinking">
+                      <div className="message-avatar assistant">📖</div>
+                      <div className="thinking-dots">
+                        <span /><span /><span />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                <div className="input-area">
+                  <div className="input-wrapper">
+                    <textarea
+                      ref={inputRef}
+                      className="chat-input"
+                      placeholder="Ask about your story..."
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      rows={1}
+                    />
+                    <button
+                      className="send-btn"
+                      onClick={() => handleSend()}
+                      disabled={!input.trim() || loading}
+                    >
+                      ↑
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Contradiction Tab */}
+            {activeTab === "contradict" && (
+              <div className="contradict-area">
+                <div className="contradict-intro">
+                  Paste a new scene you just wrote. The AI will compare it
+                  against your uploaded story and flag any contradictions or
+                  inconsistencies.
+                </div>
+
+                <div className="scene-input-wrapper">
+                  <div className="scene-label">Your new scene</div>
+                  <textarea
+                    className="scene-textarea"
+                    placeholder="Paste your new scene here... e.g. 'Elena walked into the room, her green eyes scanning the crowd.'"
+                    value={newScene}
+                    onChange={(e) => setNewScene(e.target.value)}
+                  />
+                  <button
+                    className="check-btn"
+                    onClick={handleContradictionCheck}
+                    disabled={!newScene.trim() || checking}
+                  >
+                    {checking ? "Analysing..." : "Check for Contradictions →"}
+                  </button>
+                </div>
+
+                {checkResult && (
+                  <div
+                    className={`result-card ${
+                      checkResult.contradictions_found ? "warning" : "safe"
+                    }`}
+                  >
+                    <div className="result-card-header">
+                      <span className="result-icon">
+                        {checkResult.contradictions_found ? "⚠️" : "✅"}
+                      </span>
+                      <span className="result-title">
+                        {checkResult.contradictions_found
+                          ? "Contradictions Detected"
+                          : "No Contradictions Found"}
+                      </span>
+                    </div>
+                    <div className="result-analysis">{checkResult.analysis}</div>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </main>
 
       {/* Upload Modal */}
       {showUpload && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowUpload(false)}>
+        <div
+          className="modal-overlay"
+          onClick={(e) =>
+            e.target === e.currentTarget && setShowUpload(false)
+          }
+        >
           <div className="modal">
             <div className="modal-title">Add a New Story</div>
-            <div className="modal-subtitle">Upload a chapter or document to your story bible</div>
+            <div className="modal-subtitle">
+              Upload a chapter or document to your story bible
+            </div>
 
             <div className="form-group">
               <label className="form-label">Story Name</label>
@@ -288,7 +393,9 @@ export default function App() {
                   {file ? file.name : "Click to choose a file"}
                 </div>
                 <div className="file-drop-hint">.txt files supported</div>
-                {file && <div className="file-selected">✓ {file.name} selected</div>}
+                {file && (
+                  <div className="file-selected">✓ {file.name} selected</div>
+                )}
               </div>
             </div>
 
@@ -299,7 +406,10 @@ export default function App() {
             )}
 
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setShowUpload(false)}>
+              <button
+                className="btn-cancel"
+                onClick={() => setShowUpload(false)}
+              >
                 Cancel
               </button>
               <button

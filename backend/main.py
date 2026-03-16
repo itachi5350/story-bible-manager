@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import chromadb
 from routers.ingest import router as ingest_router
 from routers.query import router as query_router
+from routers.contradict import router as contradict_router
 load_dotenv()
 
 app = FastAPI(title="Story Bible Manager")
@@ -20,6 +21,7 @@ app.add_middleware(
 chroma_client = chromadb.PersistentClient(path="./chroma_store")
 app.include_router(ingest_router)
 app.include_router(query_router)
+app.include_router(contradict_router)
 @app.get("/health")
 def health_check():
     return {
