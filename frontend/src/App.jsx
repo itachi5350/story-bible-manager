@@ -26,6 +26,8 @@ export default function App() {
   const [newScene, setNewScene] = useState("");
   const [checkResult, setCheckResult] = useState(null);
   const [checking, setChecking] = useState(false);
+  const [characters, setCharacters] = useState([]);
+  const [extracting, setExtracting] = useState(false);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -50,6 +52,7 @@ export default function App() {
     setActiveStory(story);
     setMessages([]);
     setCheckResult(null);
+    setCharacters([]);
     setActiveTab("chat");
   };
 
@@ -148,6 +151,23 @@ export default function App() {
     }
   };
 
+  const handleExtractCharacters = async () => {
+    if (!activeStory) return;
+    setExtracting(true);
+    setCharacters([]);
+
+    try {
+      const res = await axios.post(`${API}/characters/extract`, {
+        story_name: activeStory,
+      });
+      setCharacters(res.data.characters);
+    } catch (err) {
+      console.error("Failed to extract characters", err);
+    } finally {
+      setExtracting(false);
+    }
+  };
+
   return (
     <div className="app">
       {/* Sidebar */}
@@ -228,6 +248,12 @@ export default function App() {
                 onClick={() => setActiveTab("contradict")}
               >
                 ⚠️ Check Contradictions
+              </div>
+              <div
+                className={`tab ${activeTab === "characters" ? "active" : ""}`}
+                onClick={() => setActiveTab("characters")}
+              >
+                👤 Characters
               </div>
             </div>
 
@@ -350,6 +376,78 @@ export default function App() {
                     <div className="result-analysis">{checkResult.analysis}</div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Characters Tab */}
+            {activeTab === "characters" && (
+              <div className="characters-area">
+                <div className="characters-header">
+                  <div className="characters-intro">
+                    Automatically extract and track all characters from your
+                    story with their traits and relationships.
+                  </div>
+                  <button
+                    className="extract-btn"
+                    onClick={handleExtractCharacters}
+                    disabled={extracting}
+                  >
+                    {extracting ? "Extracting..." : "✦ Extract Characters"}
+                  </button>
+                </div>
+
+                {characters.length === 0 && !extracting && (
+                  <div className="no-characters">
+                    Click "Extract Characters" to analyse your story
+                  </div>
+                )}
+
+                <div className="characters-grid">
+                  {characters.map((char, i) => (
+                    <div key={i} className="character-card">
+                      <div className="character-card-header">
+                        <div className="character-avatar">
+                          {char.role === "antagonist"
+                            ? "👤"
+                            : char.role === "protagonist"
+                            ? "⚔️"
+                            : "🧑"}
+                        </div>
+                        <div>
+                          <div className="character-name">{char.name}</div>
+                          <span className={`character-role role-${char.role}`}>
+                            {char.role}
+                          </span>
+                        </div>
+                      </div>
+
+                      {char.description && (
+                        <div className="character-field">
+                          <div className="character-field-label">Description</div>
+                          <div className="character-field-value">
+                            {char.description}
+                          </div>
+                        </div>
+                      )}
+
+                      {char.traits && (
+                        <div className="character-field">
+                          <div className="character-field-label">Traits</div>
+                          <div className="character-field-value">{char.traits}</div>
+                        </div>
+                      )}
+
+                      {char.relationships && (
+                        <div className="character-field">
+                          <div className="character-field-label">Relationships</div>
+                          <div className="character-field-value">
+                            {char.relationships}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </>
