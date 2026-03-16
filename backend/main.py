@@ -6,6 +6,7 @@ from routers.ingest import router as ingest_router
 from routers.query import router as query_router
 from routers.contradict import router as contradict_router
 from routers.characters import router as characters_router
+
 load_dotenv()
 
 app = FastAPI(title="Story Bible Manager")
@@ -23,10 +24,12 @@ app.add_middleware(
 
 # Initialize ChromaDB (stores data locally in a folder called chroma_store)
 chroma_client = chromadb.PersistentClient(path="./chroma_store")
+
 app.include_router(ingest_router)
 app.include_router(query_router)
 app.include_router(contradict_router)
 app.include_router(characters_router)
+
 @app.get("/health")
 def health_check():
     return {
@@ -41,6 +44,7 @@ def list_collections():
         "collections": [c.name for c in collections],
         "count": len(collections)
     }
+
 @app.delete("/collections/{story_name}")
 def delete_collection(story_name: str):
     try:
