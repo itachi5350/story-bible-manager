@@ -20,7 +20,7 @@ def embed_texts(texts: list[str]):
     embeddings = []
     for text in texts:
         response = client.embeddings.create(
-            model="nomic-embed-text-v1_5",
+            model="nomic-embed-text-v1.5",
             input=text
         )
         embeddings.append(response.data[0].embedding)
