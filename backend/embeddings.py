@@ -1,12 +1,10 @@
-from fastembed import TextEmbedding
+import cohere
+import os
+from dotenv import load_dotenv
 
-embedding_model = None
+load_dotenv()
 
-def get_model():
-    global embedding_model
-    if embedding_model is None:
-        embedding_model = TextEmbedding("BAAI/bge-small-en-v1.5")
-    return embedding_model
+client = cohere.Client(os.getenv("COHERE_API_KEY"))
 
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50):
     words = text.split()
@@ -19,6 +17,9 @@ def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50):
     return chunks
 
 def embed_texts(texts: list[str]):
-    model = get_model()
-    embeddings = list(model.embed(texts))
-    return [e.tolist() for e in embeddings]
+    response = client.embed(
+        texts=texts,
+        model="embed-english-v3.0",
+        input_type="search_document"
+    )
+    return [list(e) for e in response.embeddings]
