@@ -11,15 +11,14 @@ load_dotenv()
 
 app = FastAPI(title="Story Bible Manager")
 
-# Allow frontend to talk to backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Initialize ChromaDB (stores data locally in a folder called chroma_store)
 chroma_client = chromadb.PersistentClient(path="./chroma_store")
 
 app.include_router(ingest_router)

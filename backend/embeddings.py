@@ -1,10 +1,12 @@
-from groq import Groq
-import os
-from dotenv import load_dotenv
+from fastembed import TextEmbedding
 
-load_dotenv()
+embedding_model = None
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+def get_model():
+    global embedding_model
+    if embedding_model is None:
+        embedding_model = TextEmbedding("BAAI/bge-small-en-v1.5")
+    return embedding_model
 
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50):
     words = text.split()
@@ -17,11 +19,6 @@ def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50):
     return chunks
 
 def embed_texts(texts: list[str]):
-    embeddings = []
-    for text in texts:
-        response = client.embeddings.create(
-            model="nomic-embed-text-v1.5",
-            input=text
-        )
-        embeddings.append(response.data[0].embedding)
-    return embeddings
+    model = get_model()
+    embeddings = list(model.embed(texts))
+    return [e.tolist() for e in embeddings]
