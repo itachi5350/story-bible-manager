@@ -6,6 +6,7 @@ from routers.ingest import router as ingest_router
 from routers.query import router as query_router
 from routers.contradict import router as contradict_router
 from routers.characters import router as characters_router
+from routers.realtime import router as realtime_router
 
 load_dotenv()
 
@@ -25,6 +26,7 @@ app.include_router(ingest_router)
 app.include_router(query_router)
 app.include_router(contradict_router)
 app.include_router(characters_router)
+app.include_router(realtime_router)
 
 @app.get("/health")
 def health_check():

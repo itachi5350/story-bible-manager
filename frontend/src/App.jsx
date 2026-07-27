@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./App.css";
+import WritingEditor from "./components/WritingEditor";
 
 const API = "https://story-bible-manager.onrender.com";
 
@@ -281,6 +282,12 @@ export default function App() {
                 👤 Characters
               </div>
             </div>
+            <div
+              className={`tab ${activeTab === "write" ? "active" : ""}`}
+              onClick={() => setActiveTab("write")}
+            >
+                ✍️ Write
+            </div>
 
             {/* Chat Tab */}
             {activeTab === "chat" && (
@@ -474,6 +481,10 @@ export default function App() {
                   ))}
                 </div>
               </div>
+            )}
+            {/* Write Tab */}
+             {activeTab === "write" && (
+                <WritingEditor activeStory={activeStory} />
             )}
           </>
         )}
