@@ -12,7 +12,67 @@ const SUGGESTIONS = [
   "Who knows about the secret?",
 ];
 
+// Landing Page Component
+function LandingPage({ onEnter }) {
+  return (
+    <div className="landing">
+      <div className="landing-content">
+        {/* Candle */}
+        <div className="landing-candle">
+          <div className="flame-wrapper">
+            <div className="flame">
+              <div className="flame-inner"></div>
+              <div className="flame-core"></div>
+            </div>
+            <div className="flame-glow"></div>
+          </div>
+          <div className="candle-body">
+            <div className="candle-shine"></div>
+            <div className="candle-drip drip-1"></div>
+            <div className="candle-drip drip-2"></div>
+            <div className="candle-drip drip-3"></div>
+          </div>
+          <div className="candle-base"></div>
+          <div className="candle-shadow"></div>
+        </div>
+
+        {/* Title */}
+        <div className="landing-title">Story Bible</div>
+        <div className="landing-subtitle">Manager</div>
+
+        {/* Description */}
+        <div className="landing-description">
+          Within these enchanted pages lies a most extraordinary grimoire. It is
+          a keeper of tales, a guardian of characters, and a warden against
+          the dark magic of plot contradictions. Let your stories breathe,
+          your characters live, and your worlds expand without fear of
+          forgetting what was written by candlelight.
+        </div>
+
+        {/* Divider */}
+        <div className="landing-divider">
+          <span className="landing-divider-star">✦</span>
+        </div>
+
+
+        {/* Enter Button */}
+        <button className="landing-enter-btn" onClick={onEnter}>
+          Open this Grimoire
+        </button>
+      </div>
+
+      {/* Background particles */}
+      <div className="landing-particles">
+        {[...Array(12)].map((_, i) => (
+          <div key={i} className={`particle particle-${i}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const [showLanding, setShowLanding] = useState(true);
   const [stories, setStories] = useState([]);
   const [activeStory, setActiveStory] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -187,16 +247,20 @@ export default function App() {
     }
   };
 
+  // Show landing page
+  if (showLanding) {
+    return <LandingPage onEnter={() => setShowLanding(false)} />;
+  }
+
   return (
     <div className="app">
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo">
-            <span className="logo-icon">📖</span>
             <span className="sidebar-title">Story Bible</span>
           </div>
-          <div className="sidebar-subtitle">Your narrative universe</div>
+          <div className="sidebar-subtitle">My narrative universe</div>
         </div>
 
         <div className="sidebar-section">
@@ -247,13 +311,29 @@ export default function App() {
             )}
           </div>
           <div className="topbar-hint">
-            {activeStory ? "Your AI story assistant" : "← Choose from the sidebar"}
+            {activeStory ? "Your AI story assistant" : "Choose from the sidebar"}
           </div>
         </div>
 
         {!activeStory ? (
           <div className="no-story-selected">
-            <div className="no-story-icon">🕯️</div>
+            <div className="candle-container">
+              <div className="flame-wrapper">
+                <div className="flame">
+                  <div className="flame-inner"></div>
+                  <div className="flame-core"></div>
+                </div>
+                <div className="flame-glow"></div>
+              </div>
+              <div className="candle-body">
+                <div className="candle-shine"></div>
+                <div className="candle-drip drip-1"></div>
+                <div className="candle-drip drip-2"></div>
+                <div className="candle-drip drip-3"></div>
+              </div>
+              <div className="candle-base"></div>
+              <div className="candle-shadow"></div>
+            </div>
             <div className="no-story-text">Your story awaits</div>
             <div className="no-story-hint">
               Select a story from the sidebar or upload a new one
@@ -267,26 +347,26 @@ export default function App() {
                 className={`tab ${activeTab === "chat" ? "active" : ""}`}
                 onClick={() => setActiveTab("chat")}
               >
-                💬 Ask Questions
+                Ask Questions
               </div>
               <div
                 className={`tab ${activeTab === "contradict" ? "active" : ""}`}
                 onClick={() => setActiveTab("contradict")}
               >
-                ⚠️ Check Contradictions
+                Check Contradictions
               </div>
               <div
                 className={`tab ${activeTab === "characters" ? "active" : ""}`}
                 onClick={() => setActiveTab("characters")}
               >
-                👤 Characters
+                Characters
               </div>
-            </div>
-            <div
-              className={`tab ${activeTab === "write" ? "active" : ""}`}
-              onClick={() => setActiveTab("write")}
-            >
-                ✍️ Write
+              <div
+                className={`tab ${activeTab === "write" ? "active" : ""}`}
+                onClick={() => setActiveTab("write")}
+              >
+                Write
+              </div>
             </div>
 
             {/* Chat Tab */}
@@ -298,7 +378,7 @@ export default function App() {
                       <div className="empty-icon">✦</div>
                       <div className="empty-title">What would you like to know?</div>
                       <div className="empty-subtitle">
-                        Ask anything about your characters, plot, lore, or timeline.
+                        Ask anything about your own creation.
                       </div>
                       <div className="suggestion-chips">
                         {SUGGESTIONS.map((s) => (
@@ -313,7 +393,7 @@ export default function App() {
                   {messages.map((msg, i) => (
                     <div key={i} className={`message ${msg.role}`}>
                       <div className="message-avatar">
-                        {msg.role === "user" ? "✦" : "📖"}
+                        {msg.role === "user" ? "✦" : "✦"}
                       </div>
                       <div className="message-bubble">
                         {msg.content}
@@ -331,7 +411,7 @@ export default function App() {
 
                   {loading && (
                     <div className="thinking">
-                      <div className="message-avatar assistant">📖</div>
+                      <div className="message-avatar assistant">✦</div>
                       <div className="thinking-dots">
                         <span /><span /><span />
                       </div>
@@ -376,7 +456,7 @@ export default function App() {
                   <div className="scene-label">Your new scene</div>
                   <textarea
                     className="scene-textarea"
-                    placeholder="Paste your new scene here... e.g. 'Elena walked into the room, her green eyes scanning the crowd.'"
+                    placeholder="Paste your new scene here..."
                     value={newScene}
                     onChange={(e) => setNewScene(e.target.value)}
                   />
@@ -390,14 +470,10 @@ export default function App() {
                 </div>
 
                 {checkResult && (
-                  <div
-                    className={`result-card ${
-                      checkResult.contradictions_found ? "warning" : "safe"
-                    }`}
-                  >
+                  <div className={`result-card ${checkResult.contradictions_found ? "warning" : "safe"}`}>
                     <div className="result-card-header">
                       <span className="result-icon">
-                        {checkResult.contradictions_found ? "⚠️" : "✅"}
+                        {checkResult.contradictions_found ? "⚠" : "✓"}
                       </span>
                       <span className="result-title">
                         {checkResult.contradictions_found
@@ -439,11 +515,8 @@ export default function App() {
                     <div key={i} className="character-card">
                       <div className="character-card-header">
                         <div className="character-avatar">
-                          {char.role === "antagonist"
-                            ? "👤"
-                            : char.role === "protagonist"
-                            ? "⚔️"
-                            : "🧑"}
+                          {char.role === "protagonist" ? "P" :
+                           char.role === "antagonist" ? "A" : "S"}
                         </div>
                         <div>
                           <div className="character-name">{char.name}</div>
@@ -452,29 +525,22 @@ export default function App() {
                           </span>
                         </div>
                       </div>
-
                       {char.description && (
                         <div className="character-field">
                           <div className="character-field-label">Description</div>
-                          <div className="character-field-value">
-                            {char.description}
-                          </div>
+                          <div className="character-field-value">{char.description}</div>
                         </div>
                       )}
-
                       {char.traits && (
                         <div className="character-field">
                           <div className="character-field-label">Traits</div>
                           <div className="character-field-value">{char.traits}</div>
                         </div>
                       )}
-
                       {char.relationships && (
                         <div className="character-field">
                           <div className="character-field-label">Relationships</div>
-                          <div className="character-field-value">
-                            {char.relationships}
-                          </div>
+                          <div className="character-field-value">{char.relationships}</div>
                         </div>
                       )}
                     </div>
@@ -482,9 +548,10 @@ export default function App() {
                 </div>
               </div>
             )}
+
             {/* Write Tab */}
-             {activeTab === "write" && (
-                <WritingEditor activeStory={activeStory} />
+            {activeTab === "write" && (
+              <WritingEditor activeStory={activeStory} />
             )}
           </>
         )}
@@ -494,9 +561,7 @@ export default function App() {
       {showUpload && (
         <div
           className="modal-overlay"
-          onClick={(e) =>
-            e.target === e.currentTarget && setShowUpload(false)
-          }
+          onClick={(e) => e.target === e.currentTarget && setShowUpload(false)}
         >
           <div className="modal">
             <div className="modal-title">Add a New Story</div>
@@ -522,7 +587,6 @@ export default function App() {
                   accept=".txt,.pdf"
                   onChange={(e) => setFile(e.target.files[0])}
                 />
-                <div className="file-drop-icon">📄</div>
                 <div className="file-drop-text">
                   {file ? file.name : "Click to choose a file"}
                 </div>
@@ -540,10 +604,7 @@ export default function App() {
             )}
 
             <div className="modal-actions">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowUpload(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowUpload(false)}>
                 Cancel
               </button>
               <button
