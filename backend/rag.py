@@ -54,7 +54,7 @@ If the answer is not found in the excerpts, say "This information isn't in the u
 """
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",  # free, very capable model
+        model="openai/gpt-oss-120b",  # free, very capable model
         messages=[
             {"role": "user", "content": prompt}
         ],

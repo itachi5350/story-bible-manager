@@ -55,7 +55,7 @@ Respond in JSON format only:
 Be conservative — only flag clear contradictions, not possibilities."""
 
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=200
         )
@@ -89,7 +89,7 @@ If no character names found, return []
 Text: {request.current_text}"""
 
         name_response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": name_prompt}],
             max_tokens=100
         )
@@ -132,7 +132,7 @@ Return ONLY JSON with no extra text:
 Context: {context}"""
 
                 profile_response = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
+                    model="openai/gpt-oss-120b",
                     messages=[{"role": "user", "content": profile_prompt}],
                     max_tokens=150
                 )
@@ -201,7 +201,7 @@ Return ONLY a JSON array of short fact strings with no extra text:
 Each fact should be one short sentence."""
 
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=200
         )
