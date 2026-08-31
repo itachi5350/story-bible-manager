@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 chroma_store/
 chapters_store/
+auth_store/
 # Environment variables (NEVER upload this)
 .env
 
