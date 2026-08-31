@@ -1,8 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from embeddings import embed_texts
 from chroma_store import get_or_create_collection
 from groq import Groq
+from auth_utils import get_current_user
 import os
 from dotenv import load_dotenv
 
@@ -16,7 +17,7 @@ class ContradictRequest(BaseModel):
     new_scene: str
 
 @router.post("/check")
-def check_contradiction(request: ContradictRequest):
+def check_contradiction(request: ContradictRequest, current_user: dict = Depends(get_current_user)):
     """
     Checks if a new scene contradicts anything in the existing story.
     """
@@ -25,7 +26,7 @@ def check_contradiction(request: ContradictRequest):
     scene_embedding = embed_texts([request.new_scene])[0]
 
     # Step 2: Find most similar existing chunks
-    collection = get_or_create_collection(request.story_name)
+    collection = get_or_create_collection(current_user["id"], request.story_name)
     results = collection.query(
         query_embeddings=[scene_embedding],
         n_results=5

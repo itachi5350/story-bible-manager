@@ -10,7 +10,7 @@ from chroma_store import get_or_create_collection
 # Initialize Groq client (free!)
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-def query_story(story_name: str, question: str, n_results: int = 5):
+def query_story(user_id: int,story_name: str, question: str, n_results: int = 5):
     """
     Takes a question, finds relevant story chunks,
     sends them to Groq, returns an answer.
@@ -20,7 +20,7 @@ def query_story(story_name: str, question: str, n_results: int = 5):
     question_embedding = embed_texts([question])[0]
 
     # Step 2: Search ChromaDB for relevant chunks
-    collection = get_or_create_collection(story_name)
+    collection = get_or_create_collection(user_id, story_name)
     results = collection.query(
         query_embeddings=[question_embedding],
         n_results=n_results

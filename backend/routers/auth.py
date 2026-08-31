@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field
-
+from rate_limiter import limiter
 import database
 from auth_utils import create_access_token, get_current_user, hash_password, verify_password
 
@@ -24,7 +24,8 @@ class AuthResponse(BaseModel):
 
 
 @router.post("/signup", response_model=AuthResponse)
-def signup(data: SignupRequest):
+@limiter.limit("5/minute")  # Limit to 5 signups per minute per IP
+def signup(request: Request, data: SignupRequest):
     if database.get_user_by_email(data.email):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "An account with this email already exists")
 
@@ -35,7 +36,8 @@ def signup(data: SignupRequest):
 
 
 @router.post("/login", response_model=AuthResponse)
-def login(data: LoginRequest):
+@limiter.limit("10/minute")  # Limit to 10 logins per minute per IP
+def login(request: Request, data: LoginRequest):
     user = database.get_user_by_email(data.email)
     if not user or not verify_password(data.password, user["hashed_password"]):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect email or password")

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, Depends
 from embeddings import chunk_text, embed_texts
 from chroma_store import save_chunks
+from auth_utils import get_current_user
 import fitz  # pymupdf
 import io
 
@@ -18,7 +19,8 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 @router.post("/upload")
 async def upload_document(
     story_name: str = Form(...),
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Accepts .txt or .pdf file upload, chunks it, embeds it, saves to ChromaDB.
@@ -46,7 +48,7 @@ async def upload_document(
     embeddings = embed_texts(chunks)
 
     # Save to ChromaDB
-    saved = save_chunks(story_name, chunks, embeddings)
+    saved = save_chunks(current_user["id"], story_name, chunks, embeddings)
 
     return {
         "message": f"Successfully ingested '{file.filename}'",

@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from chroma_store import get_or_create_collection
+from auth_utils import get_current_user
 from groq import Groq
 import os
 import json
@@ -15,13 +16,13 @@ class StoryRequest(BaseModel):
     story_name: str
 
 @router.post("/extract")
-def extract_characters(request: StoryRequest):
+def extract_characters(request: StoryRequest, current_user: dict = Depends(get_current_user)):
     """
     Extracts all characters from the story automatically.
     """
 
     # Get all chunks from the collection
-    collection = get_or_create_collection(request.story_name)
+    collection = get_or_create_collection(current_user["id"], request.story_name)
     all_docs = collection.get()
 
     if not all_docs["documents"]:

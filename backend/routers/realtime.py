@@ -1,8 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from groq import Groq
 from chroma_store import get_or_create_collection
 from embeddings import embed_texts
+from auth_utils import get_current_user
 import os
 import json
 from dotenv import load_dotenv
@@ -17,13 +18,13 @@ class TextCheckRequest(BaseModel):
     current_text: str
 
 @router.post("/check-contradiction")
-def check_contradiction_realtime(request: TextCheckRequest):
+def check_contradiction_realtime(request: TextCheckRequest, current_user: dict = Depends(get_current_user)):
     if not request.current_text.strip() or len(request.current_text.split()) < 8:
         return {"contradiction_found": False, "warning": "", "conflicting_fact": ""}
 
     try:
         embedding = embed_texts([request.current_text])[0]
-        collection = get_or_create_collection(request.story_name)
+        collection = get_or_create_collection(current_user["id"], request.story_name)
         results = collection.query(
             query_embeddings=[embedding],
             n_results=3
@@ -75,7 +76,7 @@ Be conservative — only flag clear contradictions, not possibilities."""
 
 
 @router.post("/detect-characters")
-def detect_characters_realtime(request: TextCheckRequest):
+def detect_characters_realtime(request: TextCheckRequest = None, current_user: dict = Depends(get_current_user)):
     if not request.current_text.strip():
         return {"characters": []}
 
@@ -106,7 +107,7 @@ Text: {request.current_text}"""
 
         # Step 2: For each name, embed and search ChromaDB
         characters = []
-        collection = get_or_create_collection(request.story_name)
+        collection = get_or_create_collection(current_user["id"], request.story_name)
 
         for name in names[:5]:
             # FIX: use query_embeddings not query_texts
@@ -170,13 +171,13 @@ Context: {context}"""
 
 
 @router.post("/knowledge-panel")
-def get_knowledge_panel(request: TextCheckRequest):
+def get_knowledge_panel(request: TextCheckRequest, current_user: dict = Depends(get_current_user)):
     if not request.current_text.strip() or len(request.current_text.split()) < 5:
         return {"facts": []}
 
     try:
         embedding = embed_texts([request.current_text])[0]
-        collection = get_or_create_collection(request.story_name)
+        collection = get_or_create_collection(current_user["id"], request.story_name)
 
         results = collection.query(
             query_embeddings=[embedding],
