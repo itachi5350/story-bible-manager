@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import api from "./api";
 import "./App.css";
 import WritingEditor from "./components/WritingEditor";
-
-const API = "https://story-bible-manager.onrender.com";
+import AuthPage from "./components/AuthPage";
 
 const SUGGESTIONS = [
   "What are the main characters?",
@@ -54,7 +53,6 @@ function LandingPage({ onEnter }) {
           <span className="landing-divider-star">✦</span>
         </div>
 
-
         {/* Enter Button */}
         <button className="landing-enter-btn" onClick={onEnter}>
           Open this Grimoire
@@ -73,6 +71,8 @@ function LandingPage({ onEnter }) {
 
 export default function App() {
   const [showLanding, setShowLanding] = useState(true);
+  const [token, setToken] = useState(() => localStorage.getItem("sbm_token"));
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem("sbm_email"));
   const [stories, setStories] = useState([]);
   const [activeStory, setActiveStory] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -93,16 +93,32 @@ export default function App() {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    fetchStories();
-  }, []);
+    if (token) fetchStories();
+  }, [token]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  const handleAuthenticated = (newToken, email) => {
+    setToken(newToken);
+    setUserEmail(email);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("sbm_token");
+    localStorage.removeItem("sbm_email");
+    setToken(null);
+    setUserEmail(null);
+    setStories([]);
+    setActiveStory(null);
+    setMessages([]);
+    setShowLanding(true);
+  };
+
   const fetchStories = async () => {
     try {
-      const res = await axios.get(`${API}/collections`);
+      const res = await api.get("/collections");
       setStories(res.data.collections);
     } catch (err) {
       console.error("Failed to fetch stories", err);
@@ -127,7 +143,7 @@ export default function App() {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API}/query/ask`, {
+      const res = await api.post("/query/ask", {
         story_name: activeStory,
         question,
       });
@@ -169,7 +185,7 @@ export default function App() {
     formData.append("file", file);
 
     try {
-      const res = await axios.post(`${API}/ingest/upload`, formData);
+      const res = await api.post("/ingest/upload", formData);
       setUploadStatus({
         type: "success",
         message: `✓ ${res.data.chunks_saved} passages indexed from "${res.data.story}"`,
@@ -197,7 +213,7 @@ export default function App() {
     setCheckResult(null);
 
     try {
-      const res = await axios.post(`${API}/contradict/check`, {
+      const res = await api.post("/contradict/check", {
         story_name: activeStory,
         new_scene: newScene,
       });
@@ -218,7 +234,7 @@ export default function App() {
     setCharacters([]);
 
     try {
-      const res = await axios.post(`${API}/characters/extract`, {
+      const res = await api.post("/characters/extract", {
         story_name: activeStory,
       });
       setCharacters(res.data.characters);
@@ -234,7 +250,7 @@ export default function App() {
     if (!window.confirm(`Delete "${story.replace(/_/g, " ")}"? This cannot be undone.`)) return;
 
     try {
-      await axios.delete(`${API}/collections/${story}`);
+      await api.delete(`/collections/${story}`);
       setStories((prev) => prev.filter((s) => s !== story));
       if (activeStory === story) {
         setActiveStory(null);
@@ -252,6 +268,11 @@ export default function App() {
     return <LandingPage onEnter={() => setShowLanding(false)} />;
   }
 
+  // Not signed in yet -> show the auth screen before the real app
+  if (!token) {
+    return <AuthPage onAuthenticated={handleAuthenticated} />;
+  }
+
   return (
     <div className="app">
       {/* Sidebar */}
@@ -261,6 +282,9 @@ export default function App() {
             <span className="sidebar-title">Story Bible</span>
           </div>
           <div className="sidebar-subtitle">My narrative universe</div>
+          <div className="sidebar-account">
+            {userEmail} · <button onClick={handleLogout}>Sign out</button>
+          </div>
         </div>
 
         <div className="sidebar-section">

@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-
-const API = "http://localhost:8000";
+import api from "../api";
 
 export default function ChapterSidebar({
   activeStory,
@@ -19,7 +17,7 @@ export default function ChapterSidebar({
   const fetchChapters = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/chapters/list/${activeStory}`);
+      const res = await api.get(`/chapters/list/${activeStory}`);
       setChapters(res.data.chapters);
     } catch (err) {
       console.error("Failed to fetch chapters", err);
@@ -32,7 +30,7 @@ export default function ChapterSidebar({
     e.stopPropagation();
     if (!window.confirm("Delete this chapter? This cannot be undone.")) return;
     try {
-      await axios.delete(`${API}/chapters/delete/${activeStory}/${chapterId}`);
+      await api.delete(`/chapters/delete/${activeStory}/${chapterId}`);
       setChapters(chapters.filter(c => c.id !== chapterId));
       if (activeChapter?.id === chapterId) onChapterSelect(null);
     } catch (err) {

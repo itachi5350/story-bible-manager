@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 import json
 import os
+import uuid
 from datetime import datetime
 
 from auth_utils import get_current_user
@@ -62,7 +63,7 @@ def save_chapter(data: ChapterSave, current_user: dict = Depends(get_current_use
         save_index(user_id, data.story_name, index)
         return {"message": "Chapter updated", "chapter_id": data.chapter_id}
     else:
-        chapter_id = f"ch_{int(datetime.utcnow().timestamp())}"
+        chapter_id = f"ch_{uuid.uuid4().hex[:12]}"
         chapter_path = os.path.join(get_story_dir(user_id, data.story_name), f"{chapter_id}.txt")
         with open(chapter_path, "w", encoding="utf-8") as f:
             f.write(data.content)

@@ -4,12 +4,12 @@ import Highlight from "@tiptap/extension-highlight";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useState, useEffect, useRef } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import axios from "axios";
+import api from "../api";
 import CharacterPanel from "./CharacterPanel";
 import KnowledgePanel from "./KnowledgePanel";
 import ChapterSidebar from "./ChapterSidebar";
 
-const API = "http://localhost:8000";
+
 
 export default function WritingEditor({ activeStory }) {
   const [contradiction, setContradiction] = useState(null);
@@ -54,9 +54,7 @@ export default function WritingEditor({ activeStory }) {
     }
 
     try {
-      const res = await axios.get(
-        `${API}/chapters/load/${activeStory}/${chapter.id}`
-      );
+      const res = await api.get(`/chapters/load/${activeStory}/${chapter.id}`);
       setActiveChapter(chapter);
       setChapterTitle(chapter.title);
       editor?.commands.setContent(res.data.content);
@@ -83,7 +81,7 @@ export default function WritingEditor({ activeStory }) {
 
     setSaving(true);
     try {
-      const res = await axios.post(`${API}/chapters/save`, {
+      const res = await api.post(`/chapters/save`, {
         story_name: activeStory,
         chapter_id: activeChapter?.id || null,
         title: chapterTitle,
@@ -131,15 +129,15 @@ export default function WritingEditor({ activeStory }) {
     setChecking(true);
     try {
       const [contradictionRes, charactersRes, factsRes] = await Promise.all([
-        axios.post(`${API}/realtime/check-contradiction`, {
+        api.post(`/realtime/check-contradiction`, {
           story_name: activeStory,
           current_text: text.slice(-500)
         }),
-        axios.post(`${API}/realtime/detect-characters`, {
+        api.post(`/realtime/detect-characters`, {
           story_name: activeStory,
           current_text: text.slice(-300)
         }),
-        axios.post(`${API}/realtime/knowledge-panel`, {
+        api.post(`/realtime/knowledge-panel`, {
           story_name: activeStory,
           current_text: text.slice(-300)
         })
