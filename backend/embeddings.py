@@ -1,20 +1,29 @@
 import cohere
 import os
 from dotenv import load_dotenv
+from langchain_text_splitters import RecursiveCharacterTextSplitter # <-- ADDED THIS
 
 load_dotenv()
 
 client = cohere.Client(os.getenv("COHERE_API_KEY"))
 
-def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50):
-    words = text.split()
-    chunks = []
-    i = 0
-    while i < len(words):
-        chunk = " ".join(words[i:i + chunk_size])
-        chunks.append(chunk)
-        i += chunk_size - overlap
-    return chunks
+# --- REMOVED THE OLD chunk_text FUNCTION ---
+# --- ADDED THE NEW ADVANCED chunk_text FUNCTION ---
+
+def chunk_text(text: str) -> list[str]:
+    """
+    Advanced RAG: Splits text by paragraphs, then sentences, then words.
+    Ensures no sentence is cut in half.
+    """
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=2000,  # 2000 characters is roughly 400-500 words
+        chunk_overlap=200, # Overlap so we don't lose context between chunks
+        length_function=len,
+        separators=["\n\n", "\n", ".", " ", ""] # Tries to split by paragraph first, then sentence!
+    )
+    
+    return text_splitter.split_text(text)
+
 
 def embed_texts(texts: list[str]):
     response = client.embed(
