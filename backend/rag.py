@@ -20,10 +20,12 @@ def query_story(user_id: int,story_name: str, question: str, n_results: int = 5)
     question_embedding = embed_texts([question])[0]
 
     # Step 2: Search ChromaDB for relevant chunks
-    collection = get_or_create_collection(user_id, story_name)
+    collection = get_or_create_collection(user_id) # Notice we removed story_name here
+    
     results = collection.query(
         query_embeddings=[question_embedding],
-        n_results=n_results
+        n_results=n_results,
+        where={"story_name": story_name}  # <-- THIS IS THE MAGIC FILTER!
     )
 
     # Step 3: Extract the relevant text chunks
