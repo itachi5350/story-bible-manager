@@ -1,23 +1,36 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+
 from embeddings import embed_texts
 from chroma_store import get_or_create_collection
 from groq import Groq
 from auth_utils import get_current_user
+
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-router = APIRouter(prefix="/contradict", tags=["Contradiction"])
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+router = APIRouter(
+    prefix="/contradict",
+    tags=["Contradiction"]
+)
+
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
+
 
 class ContradictRequest(BaseModel):
     story_name: str
     new_scene: str
 
+
 @router.post("/check")
-def check_contradiction(request: ContradictRequest, current_user: dict = Depends(get_current_user)):
+def check_contradiction(
+    request: ContradictRequest,
+    current_user: dict = Depends(get_current_user)
+):
     """
     Checks if a new scene contradicts anything in the existing story.
     """
@@ -25,11 +38,14 @@ def check_contradiction(request: ContradictRequest, current_user: dict = Depends
     # Step 1: Embed the new scene
     scene_embedding = embed_texts([request.new_scene])[0]
 
-    # Step 2: Find most similar existing chunks
-    collection = get_or_create_collection(current_user["id"], request.story_name)
+    # Step 2: Get the user's shared Chroma collection
+    collection = get_or_create_collection(current_user["id"])
+
+    # Search ONLY inside the selected story
     results = collection.query(
         query_embeddings=[scene_embedding],
-        n_results=5
+        n_results=5,
+        where={"story_name": request.story_name}
     )
 
     chunks = results["documents"][0]
@@ -60,6 +76,7 @@ Here is a NEW scene the author just wrote:
 ---
 
 Your job:
+
 1. Carefully compare the new scene against the existing story excerpts
 2. Identify ANY contradictions, inconsistencies, or conflicts
 3. Look for: character descriptions, timeline issues, knowledge conflicts, location errors, relationship conflicts
@@ -69,24 +86,35 @@ Respond in this EXACT format:
 CONTRADICTIONS_FOUND: YES or NO
 
 If YES, list each contradiction like this:
+
 - ISSUE: [describe the contradiction clearly]
+
   EXISTING: [what the story says]
+
   NEW SCENE: [what conflicts with it]
 
 If NO contradictions:
+
 - Write: "The new scene is consistent with the existing story."
 """
 
     response = client.chat.completions.create(
         model="openai/gpt-oss-120b",
-        messages=[{"role": "user", "content": prompt}],
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
         max_tokens=1000
     )
 
     raw = response.choices[0].message.content
 
     # Parse the response
-    contradictions_found = "CONTRADICTIONS_FOUND: YES" in raw
+    contradictions_found = (
+        "CONTRADICTIONS_FOUND: YES" in raw
+    )
 
     return {
         "contradictions_found": contradictions_found,
