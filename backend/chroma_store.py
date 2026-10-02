@@ -38,7 +38,8 @@ def list_stories(user_id: int):
     
     # Extract unique story names using a Set
     unique_stories = set()
-    for meta in results["metadatas"]:
+    if results and results.get("metadatas"):
+     for meta in results["metadatas"]:
         if meta and "story_name" in meta:
             unique_stories.add(meta["story_name"])
             

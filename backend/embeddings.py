@@ -32,3 +32,24 @@ def embed_texts(texts: list[str]):
         input_type="search_document"
     )
     return [list(e) for e in response.embeddings]
+
+def rerank_chunks(query: str, chunks: list[str], top_n: int = 5) -> list[str]:
+    """
+    Takes the raw chunks from ChromaDB and uses Cohere's Rerank model 
+    to score and sort them based on actual relevance to the user's query.
+    """
+    if not chunks:
+        return []
+        
+    response = client.rerank(
+        model="rerank-english-v3.0",
+        query=query,
+        documents=chunks,
+        top_n=top_n
+    )
+    
+    # Cohere returns the original index of the document. 
+    # We use that to rebuild our list of chunks in the new, smarter order.
+    reranked_chunks = [chunks[result.index] for result in response.results]
+    
+    return reranked_chunks

@@ -6,7 +6,7 @@ from slowapi.errors import RateLimitExceeded
 import chromadb
 import database
 from auth_utils import get_current_user
-from chroma_store import scoped_collection_name
+from chroma_store import scoped_collection_name,list_stories,get_or_create_collection
 from rate_limiter import limiter
 from routers.ingest import router as ingest_router
 from routers.query import router as query_router
@@ -49,15 +49,16 @@ def health_check():
 
 @app.get("/collections")
 def list_collections(current_user: dict = Depends(get_current_user)):
-    prefix = f"user_{current_user['id']}_"
-    collections = chroma_client.list_collections()
-    names = [c.name[len(prefix):] for c in collections if c.name.startswith(prefix)]
+    print("DEBUG: THE NEW ENDPOINT IS RUNNING")
+    names = list_stories(current_user["id"])
+    
     return {"collections": names, "count": len(names)}
 
 @app.delete("/collections/{story_name}")
 def delete_collection(story_name: str, current_user: dict = Depends(get_current_user)):
     try:
-        chroma_client.delete_collection(name=scoped_collection_name(current_user["id"], story_name))
-        return {"message": f"Story '{story_name}' deleted successfully"}
+       collection = get_or_create_collection(current_user["id"])
+       collection.delete(where={"story_name": story_name})
+       return {"message": f"Story '{story_name}' deleted successfully"}
     except Exception as e:
         return {"error": str(e)}

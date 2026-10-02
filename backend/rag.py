@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from groq import Groq
-from embeddings import embed_texts
+from embeddings import embed_texts, rerank_chunks
 from chroma_store import get_or_create_collection
 
 # Initialize Groq client (free!)
@@ -24,12 +24,15 @@ def query_story(user_id: int,story_name: str, question: str, n_results: int = 5)
     
     results = collection.query(
         query_embeddings=[question_embedding],
-        n_results=n_results,
+        n_results=15,
         where={"story_name": story_name}  # <-- THIS IS THE MAGIC FILTER!
     )
 
     # Step 3: Extract the relevant text chunks
     chunks = results["documents"][0]
+
+    # Step 4: Rerank the chunks based on relevance to the question
+    
 
     if not chunks:
         return {
@@ -37,8 +40,10 @@ def query_story(user_id: int,story_name: str, question: str, n_results: int = 5)
             "sources": []
         }
 
+    best_chunks = rerank_chunks(question, chunks, top_n=5)
+
     # Step 4: Build context from retrieved chunks
-    context = "\n\n---\n\n".join(chunks)
+    context = "\n\n---\n\n".join(best_chunks)
 
     # Step 5: Send to Groq with context
     prompt = f"""You are an assistant helping a writer stay consistent with their story.
@@ -65,5 +70,5 @@ If the answer is not found in the excerpts, say "This information isn't in the u
 
     return {
         "answer": response.choices[0].message.content,
-        "sources": chunks
+        "sources": best_chunks
     }
