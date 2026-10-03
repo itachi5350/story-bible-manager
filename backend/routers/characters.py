@@ -22,8 +22,9 @@ def extract_characters(request: StoryRequest, current_user: dict = Depends(get_c
     """
 
     # Get all chunks from the collection
-    collection = get_or_create_collection(current_user["id"], request.story_name)
-    all_docs = collection.get()
+    collection = get_or_create_collection(current_user["id"])
+
+    all_docs = collection.get(where={"story_name": request.story_name})
 
     if not all_docs["documents"]:
         return {"characters": [], "message": "No story content found."}

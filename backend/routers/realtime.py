@@ -24,10 +24,11 @@ def check_contradiction_realtime(request: TextCheckRequest, current_user: dict =
 
     try:
         embedding = embed_texts([request.current_text])[0]
-        collection = get_or_create_collection(current_user["id"], request.story_name)
+        collection = get_or_create_collection(current_user["id"])
         results = collection.query(
             query_embeddings=[embedding],
-            n_results=3
+            n_results=3,
+            where={"story_name": request.story_name}
         )
 
         chunks = results["documents"][0]
@@ -107,14 +108,15 @@ Text: {request.current_text}"""
 
         # Step 2: For each name, embed and search ChromaDB
         characters = []
-        collection = get_or_create_collection(current_user["id"], request.story_name)
+        collection = get_or_create_collection(current_user["id"])
 
         for name in names[:5]:
             # FIX: use query_embeddings not query_texts
             name_embedding = embed_texts([f"character {name} description traits appearance"])[0]
             results = collection.query(
                 query_embeddings=[name_embedding],
-                n_results=2
+                n_results=2,
+                where={"story_name": request.story_name}
             )
 
             chunks = results["documents"][0] if results["documents"] else []
@@ -177,11 +179,13 @@ def get_knowledge_panel(request: TextCheckRequest, current_user: dict = Depends(
 
     try:
         embedding = embed_texts([request.current_text])[0]
-        collection = get_or_create_collection(current_user["id"], request.story_name)
+        collection = get_or_create_collection(current_user["id"])
+
 
         results = collection.query(
             query_embeddings=[embedding],
-            n_results=4
+            n_results=4,
+            where={"story_name": request.story_name}
         )
 
         chunks = results["documents"][0]
